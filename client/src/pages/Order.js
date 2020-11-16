@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Row, Col, ListGroup, Image, Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
 import Message from "../components/Message";
 import Loader from "../components/Loader";
 import { getOrderDetails } from "../actions/orderActions";
@@ -10,8 +11,13 @@ const Order = ({ match }) => {
   const orderId = match.params.id;
   const dispatch = useDispatch();
 
+  const [sdkReady, setSdkReady] = useState(false)
+
   const orderDetails = useSelector((state) => state.orderDetails);
   const { order, loading, error } = orderDetails;
+
+  const orderDetails = useSelector((state) => state.orderDetails);
+  const { loading:loadingPay, success:successPay, error } = orderDetails;
 
   const addDecimals = (val) => {
     return (Math.round(val * 100) / 100).toFixed(2);
@@ -24,7 +30,19 @@ const Order = ({ match }) => {
   );
 
   useEffect(() => {
-    if (!order || order._id !== orderId) {
+    const addPayPalScript = async () => {
+      const { data: clientId } = await axios.get("/api/config/paypal");
+      const script = document.createElement('script')
+      script.type = 'text/javascript'
+      script.src = `https://paypal.com/sdk/js?client-id=${clientId}`
+      script.async = true
+      script.ondload = () => {
+        setSdkReady(true)
+        document.body.appendChild(script)
+      }
+    };
+
+    if (!order || order._id !== orderId || ) {
       dispatch(getOrderDetails(orderId));
     }
   }, [order, orderId, dispatch]);
